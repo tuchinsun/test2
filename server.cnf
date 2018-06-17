@@ -10,7 +10,7 @@ init-connect='SET NAMES utf8'
 character-set-server = utf8
 
 [mysqld_safe]
-log-error=/var/log/mysqld.log
+#log-error=/var/log/mysqld.log
 pid-file=/var/run/mysqld/mysqld.pid
 
 [galera]
