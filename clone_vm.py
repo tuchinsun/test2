@@ -1,9 +1,16 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
-
 #
-# Cloning container
+# Script can do:
+# - clone VM to New VM
+# - delete VM by Name with options --co and job del
+# ex.
+# clone VM
+# clone_vm.py --co WWW --cn WWW2 --ip 172.31.234.69 --hn www2.lab1.team add
+#
+# delete VM
+# clone_vm.py --co WWW2 del
 #
 
 import argparse
