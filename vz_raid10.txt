@@ -1,0 +1,129 @@
+efi bios ef02
+raid fd00
+swap  8200
+
+
+/dev/sd[a-d]
+
+1 100MB BIOS  ef02
+2 1GB /boot fd00
+3 32GB / fd00
+4 4GB swap 8200
+5 40GB /vz fd00
+
+
+/dev/md2 /boot
+/dev/md3 /
+/dev/md4 /vz
+
+
+#
+# Delete MD-RAID
+#
+mdadm --stop /dev/md2
+mdadm --zero-superblock /dev/sdb2
+mdadm --zero-superblock /dev/sdc2
+mdadm --zero-superblock /dev/sdd2
+
+mdadm --stop /dev/md3
+mdadm --zero-superblock /dev/sdb3
+mdadm --zero-superblock /dev/sdc3
+mdadm --zero-superblock /dev/sdd3
+
+mdadm --stop /dev/md5
+mdadm --zero-superblock /dev/sdb5
+mdadm --zero-superblock /dev/sdc5
+mdadm --zero-superblock /dev/sdd5
+
+
+#
+# Add RAID10
+#
+mdadm --create /dev/md2 --metadata=0.90 --level=10 --raid-devices=4 missing \
+/dev/sdb2 /dev/sdc2 /dev/sdd2
+#
+mdadm --create /dev/md3 --level=10 --raid-devices=4 missing \
+/dev/sdb3 /dev/sdc3 /dev/sdd3
+#
+mdadm --create /dev/md5 --level=10 --raid-devices=4 missing \
+/dev/sdb5 /dev/sdc5 /dev/sdd5
+
+mdadm --examine --scan > /etc/mdadm.conf
+
+mkfs.ext4 /dev/md2
+mkfs.ext4 /dev/md3
+mkfs.ext4 /dev/md5
+
+#
+# Copy BIOs EFI
+#
+mkfs.fat /dev/sd[b-d]1
+
+mount /dev/sdb1 /mnt
+rsync -av /boot/efi/ /mnt/
+umount /mnt
+
+mount /dev/sdc1 /mnt
+rsync -av /boot/efi/ /mnt/
+umount /mnt
+
+mount /dev/sdd1 /mnt
+rsync -av /boot/efi/ /mnt/
+umount /mnt
+
+#
+# Copy BOOT
+#
+mount /dev/md2 /mnt
+rsync -av /boot/ /mnt/
+umount /mnt
+
+#
+# Copy ROOT
+#
+mount /dev/md3 /mnt
+rsync -av --exclude=/boot --exclude=/vz --exclude=/mnt --exclude=/proc \
+ --exclude=/dev --exclude=/sys / /mnt/
+mkdir /mnt/{boot,vz,mnt,proc,dev,sys}
+umount /mnt
+
+
+
+--- --- ВАРИАНТ 2
+mount /dev/md3 /mnt
+mkdir /mnt/{boot,vz}
+mount /dev/md2 /mnt/boot
+mount /dev/md5 /mnt/vz
+tar cfz /mnt/root.tgz /
+cd /mnt
+tar xfz /mnt/root.tgz
+
+
+blkid /dev/md2 >> /etc/fstab
+blkid /dev/md3 >> /etc/fstab
+blkid /dev/md5 >> /etc/fstab
+
+
+
+--- LVM
+pvcreate /dev/md5
+vgcreate virtuozzo /dev/md5
+lvcreate --extents 100%FREE --name vz virtuozzo
+
+
+cd /etc/default
+cp grub grub_
+edit
+GRUB_CMDLINE_LINUX="crashkernel=auto rd.md.uuid=222ef155:bd08ee10:e601105f:2e1ff7b3 rd.md.uuid=d63c0012:de5c4f2b:31fb34fe:4bb1b45c rd.md.uuid=2990b1a4:9cceb0f5:f925e85f:c383cfc2 biosdevname=0 net.ifnames=0 quiet"
+
+1 rd.md.uuid  uuid root partition from mdadm.conf
+2 rd.md.uuid  uuid boot partition from mdadm.conf
+GRUB_CMDLINE_LINUX="crashkernel=auto rd.md.uuid=222ef155:bd08ee10:e601105f:2e1ff7b3 rd.md.uuid=f222cebd:7f1a331f:7d8f77df:c5876450 biosdevname=0 net.ifnames=0 rd.auto=1 quiet"
+
+
+mv /boot/initramfs-3.10.0-693.21.1.vz7.48.2.img /boot/initramfs-3.10.0-693.21.1.vz7.48.2.img.bak
+dracut /boot/initramfs-$(uname -r).img $(uname -r)
+
+grub2-mkconfig -o /boot/grub2/grub.cfg
+
+
