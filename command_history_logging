@@ -1,0 +1,19 @@
+
+cat <<BASHRC_EOF >> /root/.bashrc
+
+export LC_ALL="en_US.UTF-8"
+shopt -s histappend
+shopt -s cmdhist
+export TERMINAL=`tty | cut -d\/ -f4`
+export HISTSIZE=10000
+export HISTTIMEFORMAT="$TERMINAL %d/%m/%y %T "
+PROMPT_COMMAND='history -a'
+BASHRC_EOF
+
+cat <<PAMD1_EOF >> /etc/pam.d/system-auth
+session    required     pam_tty_audit.so disable=* enable=root
+PAMD1_EOF
+
+cat <<PAMD2_EOF >> /etc/pam.d/password-auth
+session    required     pam_tty_audit.so disable=* enable=root
+PAMD2_EOF
