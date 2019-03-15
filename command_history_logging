@@ -1,4 +1,12 @@
+echo "Disable NetworkManager"
+systemctl stop NetworkManager
+systemctl disable NetworkManager
 
+echo "Disable FirewallD"
+systemctl stop firewalld
+systemctl disable firewalld
+
+echo "Add logging"
 cat <<BASHRC_EOF >> /root/.bashrc
 
 export LC_ALL="en_US.UTF-8"
