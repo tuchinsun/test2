@@ -6,6 +6,10 @@ echo "Disable FirewallD"
 systemctl stop firewalld
 systemctl disable firewalld
 
+echo "Change TZ to UTC"
+rm -f /etc/localtime
+ln -s /usr/share/zoneinfo/UTC /etc/localtime
+
 echo "Add logging"
 cat <<BASHRC_EOF >> /root/.bashrc
 
