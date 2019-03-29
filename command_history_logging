@@ -29,3 +29,6 @@ PAMD1_EOF
 cat <<PAMD2_EOF >> /etc/pam.d/password-auth
 session    required     pam_tty_audit.so disable=* enable=root
 PAMD2_EOF
+
+# timeout autologout
+echo "export TMOUT=600" > /etc/profile.d/bash_autologout.sh
